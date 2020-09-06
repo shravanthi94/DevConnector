@@ -18,7 +18,9 @@ router.get("/me", auth, async (req, res) => {
     }).populate("user", ["name", "avatar"]);
 
     if (!profile) {
-      res.status(400).json({ msg: "There is no profile for this user." });
+      return res
+        .status(400)
+        .json({ msg: "There is no profile for this user." });
     }
 
     res.json(profile);
@@ -193,7 +195,7 @@ router.put(
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-      res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ errors: errors.array() });
     } else {
       const {
         title,
@@ -240,11 +242,93 @@ router.delete("/experience/:exp_id", auth, async (req, res) => {
     const profile = await Profile.findOne({ user: req.user.id });
 
     if (!profile) {
-      res.status(400).json({ msg: "Profile not found." });
+      return res.status(400).json({ msg: "Profile not found." });
     } else {
       console.log(profile);
       profile.experience = profile.experience.filter(
         (each) => each._id.toString() !== req.params.exp_id
+      );
+
+      await profile.save();
+
+      res.json(profile);
+    }
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send("Server Error.");
+  }
+});
+
+// @route  PUT api/profile/education
+// @desc   Update/add profile with experience
+// @access Private
+
+router.put(
+  "/education",
+  [
+    auth,
+    [
+      check("school", "School is required").notEmpty(),
+      check("degree", "Degree is required").notEmpty(),
+      check("fieldofstudy", "Field of study is required").notEmpty(),
+      check("from", "From date is required").notEmpty()
+    ]
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+    } else {
+      const {
+        school,
+        degree,
+        fieldofstudy,
+        from,
+        to,
+        current,
+        description
+      } = req.body;
+
+      const newEdu = {
+        school,
+        degree,
+        fieldofstudy,
+        from,
+        to,
+        current,
+        description
+      };
+
+      try {
+        const profile = await Profile.findOne({ user: req.user.id });
+
+        profile.education.unshift(newEdu);
+
+        await profile.save();
+
+        res.json(profile);
+      } catch (err) {
+        console.log(err.message);
+        res.send(500).send("Server Error.");
+      }
+    }
+  }
+);
+
+// @route  DELETE api/profile/education
+// @desc   Delete profile experience using edu_id
+// @access Private
+
+router.delete("/education/:edu_id", auth, async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ user: req.user.id });
+
+    if (!profile) {
+      res.status(400).json({ msg: "Profile not found." });
+    } else {
+      profile.education = profile.education.filter(
+        (each) => each._id.toString() !== req.params.edu_id
       );
 
       await profile.save();
