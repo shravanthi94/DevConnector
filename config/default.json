@@ -1,4 +1,5 @@
 {
   "mongoURI": "mongodb+srv://admin-shravanthi:Test123@devconnector.3q0bc.mongodb.net/<dbname>?retryWrites=true&w=majority",
-  "jwtSecret": "MyAppSecret"
+  "jwtSecret": "MyAppSecret",
+  "githubAccessToken": " 502fb36ad902e56e58a4cfba2f48848048a83b4a"
 }
